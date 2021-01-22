@@ -22,9 +22,7 @@ class GamePosition {
         if (!this.previous || this.next) {
             return this;
         }
-        //this.previous.maze.removeMove(this.previous);
         this.previous.next = null;
-        //this.previous.endGate = null;
         return this.previous;
     }
 
@@ -39,6 +37,10 @@ class GamePosition {
         const points = this.pathPoints();
         if (!points) return false;
         return points.some(point => point.x === x && point.y === y);
+    }
+
+    clearPathPoints(){
+        this._points = null;
     }
 
     pathPoints(direction) {
@@ -62,7 +64,7 @@ class GamePosition {
     }
 
     tracePath(ctx, direction, hilite, color) {
-        return this.path.tracePath(ctx, this.pathPoints(direction), hilite, color);
+        return this.path && this.path.tracePath(ctx, this.pathPoints(direction), hilite, color);
     }
 
     makeMove(gate) {
@@ -324,7 +326,7 @@ class MazePath {
     }
 
     containsGate(gate) {
-        return !!this.gates[gate.id];
+        return gate && !!this.gates[gate.id];
     }
 
     startEditing(editor) {

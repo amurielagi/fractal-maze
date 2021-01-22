@@ -185,6 +185,7 @@ class GamePage {
                 return toPosition.displayVanishingPathBetween(this.ctx, 'forward', 'gold')
                     .then(() => {
                         toPosition.endGate = null;
+                        toPosition.clearPathPoints();
                     });
             }
         }).then(() => {
@@ -274,7 +275,7 @@ class GamePage {
     }
 
     showPossibleGates(noBlinker) {
-        this.position.beginGate.display(this.ctx, 'orange');
+        if(this.position.beginGate) this.position.beginGate.display(this.ctx, 'orange');
         this.position.possibleGates
             .filter(gate => {
                 if (this.position.maze.level > 0) {
@@ -291,14 +292,13 @@ class GamePage {
             .forEach(position => {
                 position.displayPathBetween(this.ctx, 'forward', 'orange');
             });
-        if (!noBlinker) this.blinker = new Blinker(this.ctx, this.position.beginGate, 'orange');
+        if (!noBlinker && this.position.beginGate) this.blinker = new Blinker(this.ctx, this.position.beginGate, 'orange');
     }
 
     showPlayedPosition(position) {
         position.beginGate.display(this.ctx, 'orange');
         if (position.endGate) position.endGate.display(this.ctx, 'gold');
         Object.keys(position.maze.moves)
-        //.filter(moveId => moveId <= position.id)
             .map(moveId => position.maze.moves[moveId])
             .forEach(pos => {
                 const color = position.beginGate.id === pos.beginGate.id && position.endGate.id === pos.endGate.id ? 'gold' : 'orange';
