@@ -1,6 +1,8 @@
 # fractal-maze
 Browser app for editing and solving fractal mazes.
 
+![front image](front.png)
+
 This small game lets you create new fractal mazes, based on a square design with 1 to 8 exits on each side. You can then try to solve the maze yourself.
 
 ## Features
