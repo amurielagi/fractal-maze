@@ -40,6 +40,8 @@ class EditorPage {
 
     onSizeChange() {
         this.maze.size = parseInt(this.size.value);
+        this.ctx.blockSize = this.maze.blockSize;
+        this.baseCtx.blockSize = this.maze.blockSize;
         this.refreshBaseMaze();
     }
 
@@ -71,7 +73,7 @@ class EditorPage {
 
     onMouseClick(e) {
         if (!this.isActive || e.button !== 0) return;
-        const o = this.maze.objectAt(e.offsetX / this.ctx.blockSize, e.offsetY / this.ctx.blockSize, 'editor');
+        const o = this.maze.objectAt(e.offsetX, e.offsetY, 'editor');
         if (!o) {
             return;
         }
@@ -151,7 +153,7 @@ class EditorPage {
     }
 
     clearCanvas(ctx) {
-        ctx.clearRect(0, 0, this.model.gridSize, this.model.gridSize);
+        ctx.clearRect(0, 0, this.maze.width, this.maze.width);
     }
 
     displayEditorCanvas() {
@@ -182,6 +184,7 @@ class EditorPage {
         this.name.value = this.maze.name;
         this.size.value = this.maze.size;
         this.size.disabled = this.maze.sizeFinalized;
+        this.onSizeChange();
         this.refreshBaseMaze();
     }
 

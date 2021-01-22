@@ -646,7 +646,6 @@ class Maze {
         this.id = '_';
         this.x = 0;
         this.y = 0;
-        this.width = this.model.gridSize;
         this.size = data.size;
         this.nextSubMazeIdCode = data.nextSubMazeIdCode;
         this.subMazes = data.subMazes.reduce((o, s) => {
@@ -656,6 +655,7 @@ class Maze {
         }, {});
         this.startingPoint = new EndPoint(this, data.startingPoint);
         this.finish = data.finish ? new EndPoint(this, data.finish) : null;
+        this.paths = [];
         this.paths = data.paths.map(path => new MazePath(this, path));
         this.moves = {};
     }
@@ -682,8 +682,20 @@ class Maze {
         this.moves[move.id] = move;
     }
 
+    get width() {
+        if (this.size > 6) return 200;
+        if (this.size > 4) return 150;
+        return 100;
+    }
+
+    get blockSize() {
+        if (this.size > 6) return 3;
+        if (this.size > 4) return 4;
+        return 6;
+    }
+
     get subMazeWidth() {
-        if (this.size === 4) return 14;
+        if (this.size > 3) return this.size * 3 + 2;
         return this.size * 4 + 3;
     }
 
@@ -749,6 +761,8 @@ class Maze {
     }
 
     objectAt(x, y, pageId, includeMoves) {
+        x = Math.floor(x / this.blockSize);
+        y = Math.floor(y / this.blockSize);
         let object = this.gates.reduce((o, g) => (o || (g.containsPoint(x, y) ? g : null)), null);
         if (object) {
             return pageId === 'editor' ? this.pathFor(object) : object;

@@ -44,6 +44,8 @@ button {
     position: relative;
     width: 600px;
     height: 600px;
+    min-width: 600px;
+    min-height: 600px;
     border: 2px solid black;
     margin-bottom: 5px;
 }
@@ -87,6 +89,8 @@ button {
 }
 
 .gamePositionsPanel {
+    max-height: 600px;
+    overflow-y: auto;
     margin-left: 50px;
 }
 

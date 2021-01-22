@@ -86,7 +86,8 @@ class FrontPage {
         this.model.currentMazeIndex = index;
         addClass(document.getElementById('frontMaze' + index), '-active');
         const maze = new Maze(this.model, this.model.currentMaze);
-        this.ctx.clearRect(0, 0, this.model.gridSize, this.model.gridSize);
+        this.ctx.blockSize =maze.blockSize * 240 / 600;
+        this.ctx.clearRect(0, 0, maze.width, maze.width);
         maze.display(this.ctx);
         this.clearChecks();
     }

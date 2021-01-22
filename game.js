@@ -51,7 +51,7 @@ class GamePage {
         if (!this.isActive || this.animating) {
             return;
         }
-        this.highlightHoveredMoves(this.position.maze.objectAt(Math.floor(e.offsetX / this.ctx.blockSize), Math.floor(e.offsetY / this.ctx.blockSize), 'game', true));
+        this.highlightHoveredMoves(this.position.maze.objectAt(e.offsetX, e.offsetY, 'game', true));
     }
 
     highlightHoveredMoves(o) {
@@ -143,7 +143,7 @@ class GamePage {
 
     onMouseClick(e) {
         if (!this.isActive || e.button !== 0 || this.isFinished || this.animating) return;
-        const o = this.position.maze.objectAt(Math.floor(e.offsetX / this.ctx.blockSize), Math.floor(e.offsetY / this.ctx.blockSize), 'game');
+        const o = this.position.maze.objectAt(e.offsetX, e.offsetY, 'game');
         if (!o) {
             return;
         }
@@ -257,7 +257,7 @@ class GamePage {
     }
 
     clearCanvas(ctx) {
-        ctx.clearRect(0, 0, this.model.gridSize, this.model.gridSize);
+        ctx.clearRect(0, 0, this.position.maze.width, this.position.maze.width);
     }
 
     showPosition(noBlinker) {
@@ -357,10 +357,12 @@ class GamePage {
         this.isFinished = false;
         this.name.innerText = this.model.currentMaze.name;
         const maze = new Maze(this.model, this.model.currentMaze);
+        this.position = new GamePosition(maze, maze.startingPoint.startingGate());
+        this.ctx.blockSize = maze.blockSize;
+        this.baseCtx.blockSize = maze.blockSize;
         this.clearCanvas(this.baseCtx);
         maze.display(this.baseCtx);
         this.isActive = true;
-        this.position = new GamePosition(maze, maze.startingPoint.startingGate());
         this.head = this.position;
         this.showPosition();
     }
