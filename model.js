@@ -822,9 +822,6 @@ class Model {
         if (serializedMazes) {
             this.importMazes(serializedMazes);
         }
-        else {
-            this.mazes = window.preloadedMazes;
-        }
         if (this.mazes.length) {
             this.currentMazeIndex = 0;
         }
@@ -892,6 +889,9 @@ class Model {
 
     saveMazes() {
         localStorage.setItem('fractal.mazes', JSON.stringify(this.mazes));
+        if(this.mazes.length && this.currentMazeIndex === null) {
+            this.currentMazeIndex = 0;
+        }
     }
 
 
