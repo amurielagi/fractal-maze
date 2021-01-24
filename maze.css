@@ -136,3 +136,8 @@ button {
     padding-right: 10px;
     text-align: center;
 }
+
+.gameFooter {
+    justify-content: space-between;
+    width: 600px;
+}

@@ -32,6 +32,8 @@ class GamePage {
         this.save = document.getElementById('gameSave');
         this.restart = document.getElementById('gameRestart');
         this.animation = document.getElementById('gameAnimation');
+        this.undoButton = document.getElementById('gameUndo');
+        this.redoButton = document.getElementById('gameRedo');
         this.movesPanel = document.getElementById(('gamePositions'));
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = new CtxWrapper(this.canvas.getContext('2d'), 6);
@@ -43,6 +45,8 @@ class GamePage {
         this.back.addEventListener('click', () => this.onBack());
         this.restart.addEventListener('click', () => this.onRestart());
         this.save.addEventListener('click', () => this.onSave());
+        this.undoButton.addEventListener('click', () => this.onUndo());
+        this.redoButton.addEventListener('click', () => this.onRedo());
         this.position = null;
         this.isFinished = false;
         this.hoverColors = ['#555500', '#888822', '#aaaa44', '#dddd66'];
@@ -118,12 +122,36 @@ class GamePage {
         }
     }
 
+    onUndo() {
+        if (this.isFinished || this.undoBuffer.length === 0 || this.position.next) return;
+        const info = this.undoBuffer.pop();
+        const gate = this.position.maze.findGate(info.undoId);
+        this.makeMove(gate, true);
+        this.redoBuffer.push(info);
+    }
+
+    onRedo() {
+        if (this.isFinished || this.redoBuffer.length === 0 || this.position.next) return;
+        const info = this.redoBuffer.pop();
+        const gate = this.position.maze.findGate(info.redoId);
+        this.makeMove(gate, true);
+        this.undoBuffer.push(info);
+    }
+
 
     onKeyUp(e) {
         if (!this.isActive || this.animating) {
             return;
         }
         switch (e.keyCode) {
+            case 90: // Z - undo
+                if (!e.ctrlKey) return;
+                this.onUndo();
+                break;
+            case 89: //Y - redo
+                if (!e.ctrlKey) return;
+                this.onRedo();
+                break;
             case 8: // BACKSPACE
                 if (!this.isFinished) {
                     this.makeMove(this.position.beginGate);
@@ -132,11 +160,8 @@ class GamePage {
             case 38: // UP
                 if (this.position.next) {
                     this.position = this.position.next;
-                    if (this.shouldAnimate) {
-                        this.animating = true;
-                        this.transitionPositions(!this.position.previous.endGate.isExternal ? 'out' : 'in', this.position.previous, this.position, 'forward');
-                    }
-                    else this.showPosition();
+                    this.animating = this.shouldAnimate;
+                    this.transitionPositions(!this.position.previous.endGate.isExternal ? 'out' : 'in', this.position.previous, this.position, 'forward');
                 }
                 else if (this.isFinished) {
                     this.position.tracePath(this.ctx, 'forward', 'green', 'gold');
@@ -145,11 +170,8 @@ class GamePage {
             case 40: // DOWN
                 if (this.position.previous) {
                     this.position = this.position.previous;
-                    if (this.shouldAnimate) {
-                        this.animating = true;
-                        this.transitionPositions(!this.position.next.beginGate.isExternal ? 'out' : 'in', this.position.next, this.position, 'back');
-                    }
-                    else this.showPosition();
+                    this.animating = this.shouldAnimate;
+                    this.transitionPositions(!this.position.next.beginGate.isExternal ? 'out' : 'in', this.position.next, this.position, 'back');
                 }
                 else if (this.position.endGate) {
                     this.position.tracePath(this.ctx, 'back', 'green', 'gold');
@@ -169,18 +191,22 @@ class GamePage {
         }
     }
 
-    makeMove(gate) {
+    makeMove(gate, isUndo) {
         const lastPosition = this.position;
         const result = this.position.makeMove(gate);
         this.position = result.position;
         if (result.type === 'noop') return;
         else if (result.type === 'finish') this.isFinished = true;
         // in, out, finish, remove
+        if (!isUndo) {
+            this.redoBuffer.length = 0;
+            this.undoBuffer.push(result.undo);
+        }
         const position = result.type === 'finish' ? this.position : this.position.previous;
-        this.animating = true;
         if (this.blinker) this.blinker.stop();
+        if (this.shouldAnimate) this.animating = true;
         let promise = Promise.resolve();
-        if (!result.type.startsWith('remove')) {
+        if (!result.type.startsWith('remove') && this.shouldAnimate) {
             promise = position.displayPathBetween(this.ctx, 'forward', 'gold', true);
         }
         promise.then(() => this.transitionPositions(result.type, lastPosition, this.position));
@@ -188,9 +214,10 @@ class GamePage {
 
     transitionPositions(type, fromPosition, toPosition, tracePath) {
         return Promise.resolve().then(() => {
-            if (tracePath === 'forward' || tracePath === 'back' && fromPosition.endGate) return fromPosition.tracePath(this.ctx, tracePath, 'green', 'gold');
+            if (this.shouldAnimate && (tracePath === 'forward' || tracePath === 'back' && fromPosition.endGate))
+                return fromPosition.tracePath(this.ctx, tracePath, 'green', 'gold');
         }).then(() => {
-            if (type !== 'finish') {
+            if (type !== 'finish' && this.shouldAnimate) {
                 this.clearCanvas(this.baseCtx);
                 return this.zoom(type, fromPosition, toPosition);
             }
@@ -198,12 +225,16 @@ class GamePage {
             this.head.maze.display(this.baseCtx);
             if (type.startsWith('remove')) {
                 toPosition.maze.removeMove(toPosition);
-                this.showPosition(true);
-                return toPosition.displayVanishingPathBetween(this.ctx, 'forward', 'gold')
-                    .then(() => {
-                        toPosition.endGate = null;
-                        toPosition.clearPathPoints();
-                    });
+                const completeRemoveOperation = () => {
+                    toPosition.endGate = null;
+                    toPosition.clearPathPoints();
+                };
+                if (this.shouldAnimate) {
+                    this.showPosition(true);
+                    return toPosition.displayVanishingPathBetween(this.ctx, 'forward', 'gold')
+                        .then(completeRemoveOperation);
+                }
+                completeRemoveOperation();
             }
         }).then(() => {
             this.animating = false;
@@ -390,6 +421,8 @@ class GamePage {
         this.clearCanvas(this.baseCtx);
         maze.display(this.baseCtx);
         this.isActive = true;
+        this.undoBuffer = [];
+        this.redoBuffer = [];
         this.head = this.position;
         this.position = this.head.loadPositions(this.model.loadGame(maze.uid));
         this.showPosition();

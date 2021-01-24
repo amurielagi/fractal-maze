@@ -96,9 +96,16 @@ class GamePosition {
         }
         if (gate === this.beginGate) {
             const position = this.remove();
+            if(position === this) {
+                return {
+                    position,
+                    type: 'noop'
+                };
+            }
             return {
                 position,
-                type: position === this ? 'noop' : (!gate.isExternal ? 'remove-out' : 'remove-in')
+                type: (!gate.isExternal ? 'remove-out' : 'remove-in'),
+                undo: {redoId: gate.id, undoId: position.endGate.id}
             };
         }
         if (gate.parent.isEndPoint && !gate.parent.isFinish ||
@@ -124,7 +131,8 @@ class GamePosition {
             const position = new GamePosition(parentMaze, beginGate, this);
             return {
                 position,
-                type: 'out'
+                type: 'out',
+                undo: {redoId: gate.id, undoId:beginGate.id}
             };
         }
         const parentMaze = gate.parent.maze;
@@ -133,7 +141,8 @@ class GamePosition {
 
         return {
             position,
-            type: 'in'
+            type: 'in',
+            undo: {redoId: gate.id, undoId:beginGate.id}
         };
     }
 }
