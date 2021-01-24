@@ -9,6 +9,6 @@ This small game lets you create new fractal mazes, based on a square design with
  - Level 1 to 8 mazes
  - Create and edit mazes
  - Import/export mazes
- - Preloaded with 3 mazes
- - Saves your mazes to browser localStorage
+ - Saves your mazes and games to browser localStorage
+ - Several mazes provided as exported file
  
