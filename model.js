@@ -12,6 +12,26 @@ class GamePosition {
         }
     }
 
+    toData() {
+        const data = [];
+        let p = this;
+        while (p) {
+            data.push(p.endGate ? p.endGate.id : null);
+            p = p.next;
+        }
+        return data;
+    }
+
+    loadPositions(data) {
+        if (!data) return this;
+        let pos = this;
+        data.forEach((gateId) => {
+            const gate = pos.maze.findGate(gateId);
+            if(gate) pos = pos.makeMove(gate).position;
+        });
+        return pos;
+    }
+
     getPossibleGates() {
         const path = this.maze.pathFor(this.beginGate, true);
         if (!path) return [];
@@ -39,7 +59,7 @@ class GamePosition {
         return points.some(point => point.x === x && point.y === y);
     }
 
-    clearPathPoints(){
+    clearPathPoints() {
         this._points = null;
     }
 
@@ -829,6 +849,30 @@ class Model {
         this.activatePage(this.currentPage.id);
     }
 
+    get savedGames() {
+        const gamesString = localStorage.getItem('fractal.games');
+        return gamesString ? JSON.parse(gamesString) : {};
+    }
+
+    set savedGames(games) {
+    }
+
+    saveGame(mazeUid, game) {
+        const games = this.savedGames;
+        games[mazeUid] = game;
+        localStorage.setItem('fractal.games', JSON.stringify(games));
+    }
+
+    clearGame(mazeUid) {
+        const games = this.savedGames;
+        delete games[mazeUid];
+        localStorage.setItem('fractal.games', JSON.stringify(games));
+    }
+
+    loadGame(mazeUid) {
+        return this.savedGames[mazeUid];
+    }
+
     addPage(page) {
         this.pages[page.id] = page;
         page.init();
@@ -889,7 +933,7 @@ class Model {
 
     saveMazes() {
         localStorage.setItem('fractal.mazes', JSON.stringify(this.mazes));
-        if(this.mazes.length && this.currentMazeIndex === null) {
+        if (this.mazes.length && this.currentMazeIndex === null) {
             this.currentMazeIndex = 0;
         }
     }

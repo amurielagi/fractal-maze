@@ -29,6 +29,9 @@ class GamePage {
     init() {
         this.name = document.getElementById('gameName');
         this.back = document.getElementById('gameBack');
+        this.save = document.getElementById('gameSave');
+        this.restart = document.getElementById('gameRestart');
+        this.animation = document.getElementById('gameAnimation');
         this.movesPanel = document.getElementById(('gamePositions'));
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = new CtxWrapper(this.canvas.getContext('2d'), 6);
@@ -38,6 +41,8 @@ class GamePage {
         this.canvas.addEventListener('click', e => this.onMouseClick(e));
         this.canvas.addEventListener('mousemove', e => this.onMouseMove(e));
         this.back.addEventListener('click', () => this.onBack());
+        this.restart.addEventListener('click', () => this.onRestart());
+        this.save.addEventListener('click', () => this.onSave());
         this.position = null;
         this.isFinished = false;
         this.hoverColors = ['#555500', '#888822', '#aaaa44', '#dddd66'];
@@ -45,6 +50,10 @@ class GamePage {
 
     onBack() {
         this.model.routeTo('front');
+    }
+
+    get shouldAnimate() {
+        return this.animation.checked;
     }
 
     onMouseMove(e) {
@@ -123,7 +132,11 @@ class GamePage {
             case 38: // UP
                 if (this.position.next) {
                     this.position = this.position.next;
-                    this.transitionPositions(!this.position.previous.endGate.isExternal ? 'out' : 'in', this.position.previous, this.position, 'forward');
+                    if (this.shouldAnimate) {
+                        this.animating = true;
+                        this.transitionPositions(!this.position.previous.endGate.isExternal ? 'out' : 'in', this.position.previous, this.position, 'forward');
+                    }
+                    else this.showPosition();
                 }
                 else if (this.isFinished) {
                     this.position.tracePath(this.ctx, 'forward', 'green', 'gold');
@@ -132,9 +145,13 @@ class GamePage {
             case 40: // DOWN
                 if (this.position.previous) {
                     this.position = this.position.previous;
-                    this.transitionPositions(!this.position.next.beginGate.isExternal ? 'out' : 'in', this.position.next, this.position, 'back');
+                    if (this.shouldAnimate) {
+                        this.animating = true;
+                        this.transitionPositions(!this.position.next.beginGate.isExternal ? 'out' : 'in', this.position.next, this.position, 'back');
+                    }
+                    else this.showPosition();
                 }
-                else {
+                else if (this.position.endGate) {
                     this.position.tracePath(this.ctx, 'back', 'green', 'gold');
                 }
                 break;
@@ -275,7 +292,7 @@ class GamePage {
     }
 
     showPossibleGates(noBlinker) {
-        if(this.position.beginGate) this.position.beginGate.display(this.ctx, 'orange');
+        if (this.position.beginGate) this.position.beginGate.display(this.ctx, 'orange');
         this.position.possibleGates
             .filter(gate => {
                 if (this.position.maze.level > 0) {
@@ -353,6 +370,16 @@ class GamePage {
         return names.join(' > ')
     }
 
+    onRestart() {
+        this.model.clearGame(this.head.maze.uid);
+        this.deactivate();
+        this.activate();
+    }
+
+    onSave() {
+        this.model.saveGame(this.head.maze.uid, this.head.toData());
+    }
+
     activate() {
         this.isFinished = false;
         this.name.innerText = this.model.currentMaze.name;
@@ -364,6 +391,7 @@ class GamePage {
         maze.display(this.baseCtx);
         this.isActive = true;
         this.head = this.position;
+        this.position = this.head.loadPositions(this.model.loadGame(maze.uid));
         this.showPosition();
     }
 
@@ -373,5 +401,6 @@ class GamePage {
         this.clearCanvas(this.ctx);
         this.clearCanvas(this.baseCtx);
         this.position = null;
+        this.head = null;
     }
 }

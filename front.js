@@ -47,7 +47,7 @@ class FrontPage {
     }
 
     onExportMazes() {
-        this.model.exportMazes(this.checks.filter(c => c.checked).map((c, i) => i));
+        this.model.exportMazes(this.checks.map((c, i) => [c, i]).filter(a => a[0].checked).map(a => a[1]));
         this.clearChecks();
     }
 
