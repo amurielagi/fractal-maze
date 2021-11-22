@@ -847,15 +847,26 @@ class Model {
     }
 
     start() {
+        let initMazes;
         const serializedMazes = localStorage.getItem('fractal.mazes');
         if (serializedMazes) {
-            this.importMazes(serializedMazes);
+            initMazes = Promise.resolve().then(() => {
+                this.importMazes(serializedMazes);
+            });
         }
-        if (this.mazes.length) {
-            this.currentMazeIndex = 0;
+        else {
+            initMazes = fetch('fractal-maze-export.json')
+                .then(response => response.text())
+                .then(starterSetMazes => {
+                    if (starterSetMazes) this.importMazes(starterSetMazes);
+                });
         }
-
-        this.activatePage(this.currentPage.id);
+        initMazes.then(() => {
+            if (this.mazes.length) {
+                this.currentMazeIndex = 0;
+            }
+            this.activatePage(this.currentPage.id);
+        });
     }
 
     get savedGames() {
