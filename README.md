@@ -1,4 +1,4 @@
-# [fractal-maze](http://ballenon.great-site.net/projects/fmaze/index.html)
+# [fractal-maze](https://amurielagi.github.io/fractal-maze/)
 Browser app for editing and solving fractal mazes.
 
 ![front image](front.png)
