@@ -155,11 +155,14 @@ class PathPoint {
     }
 
     toData() {
-        return {
+        const data = {
             x: this.x,
-            y: this.y,
-            isHead: this.isHead
+            y: this.y
         };
+        if (this.isHead) {
+            data.isHead = true;
+        }
+        return data;
     }
 
     get id() {
@@ -488,7 +491,7 @@ class Gate {
 class EndPoint {
     constructor(maze, params) {
         const data = {
-            x: params.id === 'F' ? 35 : 25,
+            x: params.id === 'f' ? 35 : 25,
             y: 60
         };
         Object.assign(data, params);
@@ -504,7 +507,7 @@ class EndPoint {
     }
 
     get isFinish() {
-        return this.id === 'F';
+        return this.id === 'f';
     }
 
     toData() {
@@ -521,7 +524,7 @@ class EndPoint {
         ctx.font = 3;
         const m = ctx.measureText('S');
         ctx.fillStyle = 'white';
-        ctx.fillText(this.id, this.x + (this.width - m.width) / 2, this.y + (this.width + m.actualBoundingBoxAscent) / 2);
+        ctx.fillText(this.id.toUpperCase(), this.x + (this.width - m.width) / 2, this.y + (this.width + m.actualBoundingBoxAscent) / 2);
         this.gates.forEach(gate => gate.display(ctx, hilite));
     }
 
@@ -663,8 +666,8 @@ class Maze {
             size: 2,
             nextSubMazeIdCode: 'A'.charCodeAt(0),
             paths: [],
-            startingPoint: {id: 'S'},
-            finish: {id: 'F'},
+            startingPoint: {id: 's'},
+            finish: {id: 'f'},
             subMazes: []
         };
         Object.assign(data, params);
@@ -694,7 +697,7 @@ class Maze {
     toData() {
         return {
             uid: this.uid,
-            token: 'FRACTAL-MAZE.v1',
+            token: 'FRACTAL-MAZE.v2',
             name: this.name,
             size: this.size,
             nextSubMazeIdCode: this.nextSubMazeIdCode,
@@ -703,6 +706,17 @@ class Maze {
             finish: this.finish ? this.finish.toData() : null,
             subMazes: Object.values(this.subMazes).map(s => s.toData())
         };
+    }
+
+    static upgradeToV2(data) {
+        data.token = 'FRACTAL-MAZE.v2';
+        if (data.finish) {
+            data.finish.id = 'f';
+        }
+        data.startingPoint.id = 's';
+        data.paths.forEach(path => {
+            path.gates = path.gates.map(gate => gate.replace('F', 'f').replace('S', 's'));
+        });
     }
 
     removeMove(move) {
@@ -901,9 +915,16 @@ class Model {
 
     importMazes(json) {
         JSON.parse(json)
-            .filter(maze => maze.token === 'FRACTAL-MAZE.v1')
+            .filter(maze => maze.token === 'FRACTAL-MAZE.v2')
             .filter(maze => !this.mazes.some(m => maze.uid === m.uid))
             .forEach(maze => this.mazes.push(maze));
+        JSON.parse(json)
+            .filter(maze => maze.token === 'FRACTAL-MAZE.v1')
+            .filter(maze => !this.mazes.some(m => maze.uid === m.uid))
+            .forEach(maze => {
+                Maze.upgradeToV2(maze);
+                this.mazes.push(maze);
+            });
         this.saveMazes();
     }
 
