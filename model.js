@@ -169,14 +169,64 @@ class PathPoint {
         return this.x + ':' + this.y;
     }
 
-    display(ctx, hilite) {
+    direction(ids) {
+        return PathPoint.directionOf(this.id, ids);
+    }
+
+    static directionOf(id, ids, knotOnly) {
+        if (!ids) {
+            return '';
+        }
+        const [x,y] = id.split(':').map(s => parseInt(s));
+        const northId = `${x}:${y-1}`;
+        const north = ids[northId] || 0;
+        const southId = `${x}:${y+1}`;
+        const south = ids[southId] || 0;
+        const eastId = `${x+1}:${y}`;
+        const east = ids[eastId] || 0;
+        const westId = `${x-1}:${y}`;
+        const west = ids[westId] || 0;
+        
+        if (north + south + east + west > 2) {
+            return 'k';
+        }
+        if (knotOnly) {
+            return '';
+        }
+        if (north + south > 1 && PathPoint.directionOf(northId, ids, true) !== 'k' && PathPoint.directionOf(southId, ids, true) !== 'k') {
+            return 'v';
+        }
+        if (east + west > 1 && PathPoint.directionOf(eastId, ids, true) !== 'k' && PathPoint.directionOf(westId, ids, true) !== 'k') {
+            return 'h';
+        }
+        return '';        
+    }
+
+    display(ctx, color, hilite, pointIds) {
+        ctx.fillStyle = hilite ? hilite : color;
         if (this.isHead) {
             if (!hilite) {
                 return;
             }
             ctx.fillStyle = hilite;
         }
-        ctx.fillRect(this.x, this.y, 1, 1);
+        const dir = this.direction(pointIds);
+        const pointSize = dir === 'k' ? 1.8 : 1;
+
+        ctx.fillRect(this.x + (1-pointSize)/2, this.y+ (1-pointSize)/2, pointSize, pointSize);
+        
+        switch(dir) {
+            case 'v':
+                ctx.fillStyle = 'white';
+                ctx.drawRectMargin(this.x, this.y, 1, 1, 'left');
+                ctx.drawRectMargin(this.x, this.y, 1, 1, 'right');
+                break;
+            case 'h':
+                ctx.fillStyle = 'white';
+                ctx.drawRectMargin(this.x, this.y, 1, 1, 'top');
+                ctx.drawRectMargin(this.x, this.y, 1, 1, 'bottom');
+                break;
+        }
     }
 }
 
@@ -226,30 +276,35 @@ class MazePath {
         this.color = color;
     }
 
+    pointIdMap(points) {
+        return points.map(p => p.id).reduce((map, id) => {map[id] = 1; return map;}, {});
+    }
+
+    displayPoints(ctx, points, color, hilite) {
+        const map = this.pointIdMap(points);
+        points.forEach(p => p.display(ctx, color, hilite, map));
+    }
+
     display(ctx, hilite) {
-        ctx.fillStyle = hilite ? hilite : this.color;
-        Object.values(this.points).forEach(p => {
-            p.display(ctx, hilite);
-        });
+        this.displayPoints(ctx, Object.values(this.points), this.color, hilite);
         if (hilite) {
             Object.values(this.gates).forEach(g => {
                 g.display(ctx, hilite);
             });
         }
-        this.head.display(ctx, hilite ? 'green' : hilite);
+        this.head.display(ctx, this.color, hilite ? 'green' : hilite);
     }
 
     displayBetween(ctx, points, color, animate) {
-        ctx.fillStyle = color;
         if (!animate) {
-            points.forEach(p => p.display(ctx, color));
+            this.displayPoints(ctx, points, color, color);
             return {then: callback => callback()};
         }
+        const idMap = this.pointIdMap(points);
         return new Promise(accept => {
             let i = 0;
-            ctx.fillStyle = color;
             const timer = setInterval(() => {
-                points[i].display(ctx, color);
+                points[i].display(ctx, color, color, idMap);
                 if (++i >= points.length) {
                     clearInterval(timer);
                     accept();
@@ -259,13 +314,12 @@ class MazePath {
     }
 
     displayVanishingBetween(ctx, points, color) {
-        ctx.fillStyle = color;
-        points.forEach(p => p.display(ctx, color));
-        ctx.fillStyle = this.color;
+        this.displayPoints(ctx, points, color, color);
+        const idMap = this.pointIdMap(points);
         return new Promise(accept => {
             let i = points.length - 1;
             const timer = setInterval(() => {
-                points[i--].display(ctx, color);
+                points[i--].display(ctx, this.color, this.color, idMap);
                 if (i < 0) {
                     clearInterval(timer);
                     accept();
@@ -275,16 +329,17 @@ class MazePath {
     }
 
     tracePath(ctx, points, hilite, color) {
+        const idMap = this.pointIdMap(points);
         return new Promise(accept => {
             let i = 0;
             const timer = setInterval(() => {
                 if (i < points.length) {
                     ctx.fillStyle = hilite;
-                    points[i].display(ctx, color);
+                    points[i].display(ctx, color, color, idMap);
                 }
                 if (i > 0) {
                     ctx.fillStyle = color;
-                    points[i - 1].display(ctx, color);
+                    points[i - 1].display(ctx, color, color, idMap);
                 }
                 if (++i > points.length) {
                     clearInterval(timer);

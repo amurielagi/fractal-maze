@@ -40,6 +40,19 @@ class CtxWrapper {
         return this.ctx.fillRect(x * this.blockSize, y * this.blockSize, w * this.blockSize, h * this.blockSize);
     }
 
+    drawRectMargin(x , y, w, h, margin) {
+        switch(margin) {
+            case 'top':
+                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize - this.blockSize * 0.2, w * this.blockSize, h * this.blockSize * 0.2);
+            case 'bottom':
+                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize + this.blockSize, w * this.blockSize, h * this.blockSize * 0.2);
+            case 'left':
+                return this.ctx.fillRect(x * this.blockSize - this.blockSize * 0.2, y * this.blockSize, w * this.blockSize * 0.2, h * this.blockSize);
+            case 'right':
+                return this.ctx.fillRect(x * this.blockSize + this.blockSize, y * this.blockSize, w * this.blockSize * 0.2, h * this.blockSize);
+        }
+    }
+
     fillText(text, x, y) {
         return this.ctx.fillText(text, x * this.blockSize, y * this.blockSize);
     }
