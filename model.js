@@ -211,7 +211,7 @@ class PathPoint {
             ctx.fillStyle = hilite;
         }
         const dir = this.direction(pointIds);
-        const pointSize = dir === 'k' ? 1.8 : 1;
+        const pointSize = dir === 'k' ? 1.5 : 1;
 
         ctx.fillRect(this.x + (1-pointSize)/2, this.y+ (1-pointSize)/2, pointSize, pointSize);
         
@@ -714,9 +714,12 @@ class SubMaze {
 }
 
 class Maze {
+    static nextUID() {
+        return Date.now() + ':' + Math.random();
+    }
     constructor(model, params = {}, parent = null, level = 0) {
         const data = {
-            uid: Date.now() + ':' + Math.random(),
+            uid: Maze.nextUID(),
             name: 'Maze 1',
             size: 2,
             nextSubMazeIdCode: 'A'.charCodeAt(0),
@@ -736,6 +739,7 @@ class Maze {
         this.x = 0;
         this.y = 0;
         this.size = data.size;
+        this.readOnly = data.readOnly;
         this.nextSubMazeIdCode = data.nextSubMazeIdCode;
         this.subMazes = data.subMazes.reduce((o, s) => {
             const subMaze = new SubMaze(this, s);
@@ -916,26 +920,21 @@ class Model {
     }
 
     start() {
-        let initMazes;
         const serializedMazes = localStorage.getItem('fractal.mazes');
-        if (serializedMazes) {
-            initMazes = Promise.resolve().then(() => {
-                this.importMazes(serializedMazes);
+        fetch('fractal-maze-export.json')
+            .then(response => response.text())
+            .then(starterSetMazes => {
+                if (starterSetMazes) this.importMazes(starterSetMazes);
+            })
+            .then(() => {
+                if (serializedMazes) this.importMazes(serializedMazes);
+            })
+            .then(() => {
+                if (this.mazes.length) {
+                    this.currentMazeIndex = 0;
+                }
+                this.activatePage(this.currentPage.id);
             });
-        }
-        else {
-            initMazes = fetch('fractal-maze-export.json')
-                .then(response => response.text())
-                .then(starterSetMazes => {
-                    if (starterSetMazes) this.importMazes(starterSetMazes);
-                });
-        }
-        initMazes.then(() => {
-            if (this.mazes.length) {
-                this.currentMazeIndex = 0;
-            }
-            this.activatePage(this.currentPage.id);
-        });
     }
 
     get savedGames() {
@@ -1013,6 +1012,14 @@ class Model {
     replaceCurrentMaze(maze) {
         this.mazes.splice(this.currentMazeIndex, 1, maze);
         this.saveMazes();
+    }
+
+    cloneMaze(maze) {
+        const cloned = JSON.parse(JSON.stringify(maze));
+        cloned.uid = Maze.nextUID();
+        cloned.name = 'Copy of ' + cloned.name;
+        delete cloned.readOnly;
+        this.mazes.push(cloned);
     }
 
     deleteCurrentMaze() {

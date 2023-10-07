@@ -41,15 +41,16 @@ class CtxWrapper {
     }
 
     drawRectMargin(x , y, w, h, margin) {
+        const MARGIN_SIZE = 0.3;
         switch(margin) {
             case 'top':
-                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize - this.blockSize * 0.2, w * this.blockSize, h * this.blockSize * 0.2);
+                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize - this.blockSize * MARGIN_SIZE, w * this.blockSize, h * this.blockSize * MARGIN_SIZE);
             case 'bottom':
-                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize + this.blockSize, w * this.blockSize, h * this.blockSize * 0.2);
+                return this.ctx.fillRect(x * this.blockSize, y * this.blockSize + this.blockSize, w * this.blockSize, h * this.blockSize * MARGIN_SIZE);
             case 'left':
-                return this.ctx.fillRect(x * this.blockSize - this.blockSize * 0.2, y * this.blockSize, w * this.blockSize * 0.2, h * this.blockSize);
+                return this.ctx.fillRect(x * this.blockSize - this.blockSize * MARGIN_SIZE, y * this.blockSize, w * this.blockSize * MARGIN_SIZE, h * this.blockSize);
             case 'right':
-                return this.ctx.fillRect(x * this.blockSize + this.blockSize, y * this.blockSize, w * this.blockSize * 0.2, h * this.blockSize);
+                return this.ctx.fillRect(x * this.blockSize + this.blockSize, y * this.blockSize, w * this.blockSize * MARGIN_SIZE, h * this.blockSize);
         }
     }
 

@@ -9,6 +9,7 @@ class FrontPage {
         this.newButton = document.getElementById('frontNew');
         this.editButton = document.getElementById('frontEdit');
         this.playButton = document.getElementById('frontPlay');
+        this.cloneButton = document.getElementById('frontClone');
         this.importMazeInput = document.getElementById('frontImportMaze');
         this.importButton = document.getElementById('frontImportButton');
         this.exportButton = document.getElementById('frontExportButton');
@@ -19,6 +20,7 @@ class FrontPage {
         this.newButton.addEventListener('click', () => this.onNewMaze());
         this.editButton.addEventListener('click', () => this.onEdit());
         this.playButton.addEventListener('click', () => this.onPlay());
+        this.cloneButton.addEventListener('click', () => this.onClone());
         this.importButton.addEventListener('click', () => this.importMazeInput.click());
         this.exportButton.addEventListener('click', () => this.onExportMazes());
         this.importMazeInput.addEventListener('change', e => this.onImportMaze(e.target.files));
@@ -89,6 +91,7 @@ class FrontPage {
         this.ctx.blockSize =maze.blockSize * 240 / 600;
         this.ctx.clearRect(0, 0, maze.width, maze.width);
         maze.display(this.ctx);
+        this.editButton.style.display = maze.readOnly ? 'none' : '';
         this.clearChecks();
     }
 
@@ -118,6 +121,11 @@ class FrontPage {
 
     onPlay() {
         this.model.routeTo('game');
+    }
+
+    onClone() {
+        this.model.cloneMaze(this.model.currentMaze);
+        this.refreshMazeList();
     }
 
     onEdit() {
