@@ -539,6 +539,9 @@ class Gate {
     }
 
     containsPoint(x, y) {
+        if (this.isExternal) {
+            return x >= this.x - 1 && x <= this.x + 1 && y >= this.y -1 && y <= this.y + 1;
+        }
         return x >= this.x && x < this.x + this.width && y >= this.y && y < this.y + this.width;
     }
 }
