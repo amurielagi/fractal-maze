@@ -123,7 +123,7 @@ class GamePage {
     }
 
     onUndo() {
-        if (this.isFinished || this.undoBuffer.length === 0 || this.position.next) return;
+        if (this.isFinished || this.undoBuffer.length === 0 || this.position.next || this.animating) return;
         const info = this.undoBuffer.pop();
         const gate = this.position.maze.findGate(info.undoId);
         this.makeMove(gate, true);
@@ -131,7 +131,7 @@ class GamePage {
     }
 
     onRedo() {
-        if (this.isFinished || this.redoBuffer.length === 0 || this.position.next) return;
+        if (this.isFinished || this.redoBuffer.length === 0 || this.position.next || this.animating) return;
         const info = this.redoBuffer.pop();
         const gate = this.position.maze.findGate(info.redoId);
         this.makeMove(gate, true);
@@ -209,7 +209,7 @@ class GamePage {
         if (!result.type.startsWith('remove') && this.shouldAnimate) {
             promise = position.displayPathBetween(this.ctx, 'forward', 'gold', true);
         }
-        promise.then(() => this.transitionPositions(result.type, lastPosition, this.position));
+        return promise.then(() => this.transitionPositions(result.type, lastPosition, this.position));
     }
 
     transitionPositions(type, fromPosition, toPosition, tracePath) {
@@ -222,7 +222,7 @@ class GamePage {
                 return this.zoom(type, fromPosition, toPosition);
             }
         }).then(() => {
-            this.head.maze.display(this.baseCtx);
+            toPosition.maze.display(this.baseCtx);
             if (type.startsWith('remove')) {
                 toPosition.maze.removeMove(toPosition);
                 const completeRemoveOperation = () => {
@@ -360,7 +360,7 @@ class GamePage {
         while (p) {
             const move = document.createElement('tr');
             move.appendChild(this.moveCell(p.id));
-            move.appendChild(this.moveCell(p.maze.parent ? p.maze.parent.id : 'S'));
+            move.appendChild(this.moveCell(p.maze.getDisplayId()));
             move.appendChild(this.moveCell(p.maze.level));
             move.appendChild(this.moveCell(this.gateDisplayName(p.beginGate)));
             move.appendChild(this.moveCell(this.gateDisplayName(p.endGate)));
@@ -389,14 +389,8 @@ class GamePage {
         let m = maze;
         const names = [];
         while (m) {
-            if (m.parent) {
-                names.push(m.parent.id);
-                m = m.parent.parentMaze;
-            }
-            else {
-                names.push('S');
-                m = null;
-            }
+            names.push(m.getDisplayId());
+            m = m.parent ? m.parent.parentMaze : null;
         }
         return names.join(' > ')
     }

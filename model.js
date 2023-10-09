@@ -756,6 +756,10 @@ class Maze {
         this.moves = {};
     }
 
+    getDisplayId() {
+        return this.parent ? this.parent.id : 'S'
+    }
+
     toData() {
         return {
             uid: this.uid,
@@ -860,6 +864,12 @@ class Maze {
     }
 
     display(ctx) {
+        const displayId = this.getDisplayId();
+        ctx.font = 5 * this.width / this.subMazeWidth;
+        const m = ctx.measureText(displayId);
+        ctx.fillStyle = '#00000010';
+        ctx.fillText(displayId, (this.width - m.width) / 2, (this.width + m.actualBoundingBoxAscent) / 2);
+
         if (this.finish && !this.finish.moving) this.finish.display(ctx);
         if (!this.startingPoint.moving) this.startingPoint.display(ctx);
         Object.values(this.subMazes).forEach(s => s.display(ctx));
